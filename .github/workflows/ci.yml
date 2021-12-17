@@ -21,3 +21,37 @@ jobs:
       - run: go test
 
       - run: go vet
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: temptxt
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: "^1.17.5"
+
+      - name: Clone coredns/coredns
+        # From https://stackoverflow.com/questions/17414104/git-checkout-latest-tag
+        run: |
+          git clone https://github.com/coredns/coredns
+          cd coredns
+          git fetch --tags
+          latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "Checking out $latestTag"
+          git checkout $latestTag
+
+      - name: Edit plugin.cfg
+        working-directory: coredns
+        run: |
+          echo "temptxt:temptxt" >> plugin.cfg
+
+      - name: Move temptxt to $GOROOT/src/
+        run: |
+          mkdir -p "$GOROOT/src"
+          mv ./temptxt "$GOROOT/src/temptxt"
+
+      - working-directory: coredns
+        run: make
