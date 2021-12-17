@@ -13,7 +13,7 @@ from the upstream reverse proxy.
 
 ## Syntax
 ```
-temptxt [PREFIX] [ZONE] {
+temptxt [PREFIX] [SUFFIX] {
     [txt FQDN REGEXP1 REGEXP2 ...]
     [txt_alias ACTUAL_FQDN UPDATE_FQDN REGEXP1 REGEXP2 ...]
 
@@ -23,7 +23,8 @@ temptxt [PREFIX] [ZONE] {
     [listen ADDRESS]
 }
 ```
-* `PREFIX` - Prefix to add to FQDNs. This only affects DNS queries. Updates through the API need to use the FQDN without the prefix.
+* `PREFIX` - Prefix to add to FQDNs. This only affects DNS queries. Updates through the API need to use the FQDN without the prefix (txt_alias doesn't used prefix).
+* `SUFFIX` - Suffix to add to FQDNs. This only affects DNS queries. Updates through the API need to use the FQDN without the suffix (txt_alias doesn't used suffix).
 * `txt` - FQDN to serve txt records for. If one of the regexps matches the username, the API request will be allowed. Regexps are automatically anchored with `^` and `$`.
 * `txt_alias` - Useful in use cases like example 2. UPDATE_FQDN is the FQDN that is used when calling the API, but the TXT record for ACTUAL_FQDN will be the one that is actually updated.
 * `auth_header` - The header that contains the username for API authentication.  Make sure that this a user cannot set the contents of the header. Default: `X-Forwarded-User`
