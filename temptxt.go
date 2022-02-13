@@ -204,7 +204,7 @@ func (tt *TempTxt) updateHandler(w http.ResponseWriter, r *http.Request) {
 	record.updated = time.Now()
 	record.mtx.Unlock()
 
-	atomic.StoreUint32(&tt.modified, 1)
+	tt.setModified()
 
 	log.Infof("Received update for %q from user %q", ub.FQDN, user)
 

@@ -557,15 +557,14 @@ func TestCleanModified(t *testing.T) {
 	}
 }
 
+// Nothing should be cleared because the modified flag hasn't been set.
 func TestCleanNotModified(t *testing.T) {
 	tt := TempTxt{Next: testHandler(), maxAge: 4 * time.Minute, cleanInterval: 10 * time.Millisecond}
 
 	updated := time.Now().Add(time.Duration(-5 * time.Minute))
 	tt.records = map[string]*Record{
 		"test-clean1.example.com.": {content: []string{"data"}, updated: updated},
-		"test-clean2.example.com.": {content: []string{"data"}, updated: updated},
-		// multiple
-		"test-clean3.example.com.": {content: []string{"data", "data2"}, updated: updated},
+		"test-clean2.example.com.": {content: []string{"data", "data2"}, updated: updated},
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -573,11 +572,11 @@ func TestCleanNotModified(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 	cancel()
 
+	wantLen := 1
 	for k, v := range tt.records {
-		if l := len(v.content); l != 2 {
-			t.Errorf(`[%s] expected 1 item in content but got %d: %v`, k, l, v.content)
-		} else if v.content[0] != "data" || v.content[1] != "data2" {
-			t.Errorf(`[%s] Expected {"data", "data2"}, but got %v`, k, v.content)
+		if l := len(v.content); l != wantLen {
+			t.Errorf(`[%s] wanted %d item(s) in content but got %d: %v`, k, wantLen, l, v.content)
 		}
+		wantLen++
 	}
 }
