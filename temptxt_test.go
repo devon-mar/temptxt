@@ -18,9 +18,11 @@ import (
 	"github.com/miekg/dns"
 )
 
-var tt TempTxt
-var updateUrl string
-var client = http.Client{}
+var (
+	tt        TempTxt
+	updateUrl string
+	client    = http.Client{}
+)
 
 func testHandler() test.HandlerFunc {
 	return func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
@@ -131,7 +133,6 @@ func TestServeDNS(t *testing.T) {
 
 		rec := dnstest.NewRecorder(&test.ResponseWriter{})
 		code, err := tt.ServeDNS(context.Background(), rec, req)
-
 		if err != nil {
 			t.Errorf("[%d] Unexpected error %v", i, err)
 			continue
@@ -331,7 +332,6 @@ func TestUpdateAndQuery(t *testing.T) {
 
 	rec := dnstest.NewRecorder(&test.ResponseWriter{})
 	code, err := tt.ServeDNS(context.Background(), rec, req)
-
 	if err != nil {
 		t.Fatalf("Unexpected error %v", err)
 	}
@@ -375,7 +375,6 @@ func TestUpdateAndQueryMultiple(t *testing.T) {
 
 	rec := dnstest.NewRecorder(&test.ResponseWriter{})
 	code, err := tt.ServeDNS(context.Background(), rec, req)
-
 	if err != nil {
 		t.Fatalf("Unexpected error %v", err)
 	}
@@ -418,7 +417,6 @@ func TestUpdateAndQueryAlias(t *testing.T) {
 
 	rec := dnstest.NewRecorder(&test.ResponseWriter{})
 	code, err := tt.ServeDNS(context.Background(), rec, req)
-
 	if err != nil {
 		t.Fatalf("Unexpected error %v", err)
 	}
@@ -462,7 +460,6 @@ func TestUpdateAndQueryAliasMultiple(t *testing.T) {
 
 	rec := dnstest.NewRecorder(&test.ResponseWriter{})
 	code, err := tt.ServeDNS(context.Background(), rec, req)
-
 	if err != nil {
 		t.Fatalf("Unexpected error %v", err)
 	}
@@ -509,7 +506,6 @@ func TestUpdateAndQueryForm(t *testing.T) {
 
 	rec := dnstest.NewRecorder(&test.ResponseWriter{})
 	code, err := tt.ServeDNS(context.Background(), rec, req)
-
 	if err != nil {
 		t.Fatalf("Unexpected error %v", err)
 	}

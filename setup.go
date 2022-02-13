@@ -29,7 +29,6 @@ func init() {
 
 func setup(c *caddy.Controller) error {
 	tt, err := parseConfig(c)
-
 	if err != nil {
 		return err
 	}
