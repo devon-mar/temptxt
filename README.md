@@ -98,10 +98,10 @@ curl -X POST \
 
 ```
 
-Clear record using certificate auth
+Clear the record using certificate auth
 ```
 curl -X POST \
-    -d "fqdn=www.example.com&content=test" \
+    -d "fqdn=www.example.com&content=" \
     --cert ./cert.crt \
     --key ./cert.key \
     https://acme-dns.example.com/update
