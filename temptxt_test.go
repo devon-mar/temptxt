@@ -47,18 +47,26 @@ func TestMain(m *testing.M) {
 	tt.aliases = map[string]*Record{
 		"test1.example.com.": {allowed: []*regexp.Regexp{regexp.MustCompile("^test1[0-9]$")}},
 		// Used in TestServeDNS. Do not modify content.
-		"test2.example.com.": {content: "test2"},
+		"test2.example.com.": {content: []string{"test2"}},
 		// Used in TestUpdateAndQuery.
-		"test3.example.com.": {content: "test3", allowed: []*regexp.Regexp{regexp.MustCompile("^test13$")}},
+		"test3.example.com.": {content: []string{}, allowed: []*regexp.Regexp{regexp.MustCompile("^test13$")}},
 		// Used in TestUpdateAndQueryAlias
-		"test4-alias.example.com.": {content: "alias_update", allowed: []*regexp.Regexp{regexp.MustCompile("test14")}},
-		"empty.example.com.":       {},
+		"test4-alias.example.com.": {content: nil, allowed: []*regexp.Regexp{regexp.MustCompile("test14")}},
+		// Used in TestUPdateAndQueryForm
+		"test5.example.com.": {content: []string{}, allowed: []*regexp.Regexp{regexp.MustCompile("^test15$")}},
+		// Used in TestUpdateAndQueryAliasMultiple
+		"test6-alias.example.com.": {content: []string{}, allowed: []*regexp.Regexp{regexp.MustCompile("^test16$")}},
+		// Used in TestUpdateAndQueryMultiple
+		"test7.example.com.": {content: []string{}, allowed: []*regexp.Regexp{regexp.MustCompile("^test17$")}},
+		"empty.example.com.": {},
 	}
 
 	tt.records = make(map[string]*Record)
 	for k, v := range tt.aliases {
 		if k == "test4-alias.example.com." {
 			tt.records["_acme-challenge.test4.example.com."] = v
+		} else if k == "test6-alias.example.com." {
+			tt.records["_acme-challenge.test6.example.com."] = v
 		} else {
 			tt.records["_acme-challenge."+k] = v
 		}
@@ -345,6 +353,52 @@ func TestUpdateAndQuery(t *testing.T) {
 	}
 }
 
+func TestUpdateAndQueryMultiple(t *testing.T) {
+	content := []string{strings.Repeat("a", 255), "content2"}
+	for _, c := range content {
+		updateReq, err := http.NewRequest("PUT", updateUrl, bytes.NewBuffer([]byte(`{"fqdn":"test7.example.com.", "content": "`+c+`"}`)))
+		if err != nil {
+			t.Fatalf("Error creating request: %v", err)
+		}
+		updateReq.Header.Set("Content-Type", "application/json")
+		updateReq.Header.Set("X-Forwarded-User", "test17")
+		resp, err := client.Do(updateReq)
+		if err != nil {
+			t.Fatalf("Error sending request: %v", err)
+		}
+		assertStatus(http.StatusNoContent, resp, t)
+	}
+
+	// Test query
+	req := new(dns.Msg)
+	req.SetQuestion("_acme-challenge.test7.example.com.", dns.TypeTXT)
+
+	rec := dnstest.NewRecorder(&test.ResponseWriter{})
+	code, err := tt.ServeDNS(context.Background(), rec, req)
+
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+
+	if code != dns.RcodeSuccess {
+		t.Fatalf("Expected rcode %s, but got %s", dns.RcodeToString[dns.RcodeSuccess], dns.RcodeToString[code])
+	}
+
+	if rec.Msg.Authoritative != true {
+		t.Errorf("Expected authoritative to be true")
+	}
+
+	if len(rec.Msg.Answer) != 2 {
+		t.Errorf("Expected 2 answers, got %d", len(rec.Msg.Answer))
+	} else {
+		for i, c := range content {
+			if want := fmt.Sprintf("_acme-challenge.test7.example.com.	0	IN	TXT	%q", c); rec.Msg.Answer[i].String() != want {
+				t.Errorf("[%d] Expected answer %q, got %q", i, want, rec.Msg.Answer[i].String())
+			}
+		}
+	}
+}
+
 func TestUpdateAndQueryAlias(t *testing.T) {
 	updateReq, err := http.NewRequest("PUT", updateUrl, bytes.NewBuffer([]byte(`{"fqdn":"test4-alias.example.com.", "content": "alias_update"}`)))
 	if err != nil {
@@ -386,17 +440,63 @@ func TestUpdateAndQueryAlias(t *testing.T) {
 	}
 }
 
+func TestUpdateAndQueryAliasMultiple(t *testing.T) {
+	content := []string{"alias_update1", "alias_update2"}
+	for _, c := range content {
+		updateReq, err := http.NewRequest("PUT", updateUrl, bytes.NewBuffer([]byte(`{"fqdn":"test6-alias.example.com.", "content": "`+c+`"}`)))
+		if err != nil {
+			t.Fatalf("Error creating request: %v", err)
+		}
+		updateReq.Header.Set("Content-Type", "application/json")
+		updateReq.Header.Set("X-Forwarded-User", "test16")
+		resp, err := client.Do(updateReq)
+		if err != nil {
+			t.Fatalf("Error sending request: %v", err)
+		}
+		assertStatus(http.StatusNoContent, resp, t)
+	}
+
+	// Test query
+	req := new(dns.Msg)
+	req.SetQuestion("_acme-challenge.test6.example.com.", dns.TypeTXT)
+
+	rec := dnstest.NewRecorder(&test.ResponseWriter{})
+	code, err := tt.ServeDNS(context.Background(), rec, req)
+
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+
+	if code != dns.RcodeSuccess {
+		t.Fatalf("Expected rcode %s, but got %s", dns.RcodeToString[dns.RcodeSuccess], dns.RcodeToString[code])
+	}
+
+	if rec.Msg.Authoritative != true {
+		t.Errorf("Expected authoritative to be true")
+	}
+
+	if len(rec.Msg.Answer) != 2 {
+		t.Errorf("Expected 2 answers, got %d", len(rec.Msg.Answer))
+	} else {
+		for i, c := range content {
+			if want := fmt.Sprintf("_acme-challenge.test6.example.com.	0	IN	TXT	%q", c); rec.Msg.Answer[i].String() != want {
+				t.Errorf("[%d] Expected answer %q, got %q", i, want, rec.Msg.Answer[i].String())
+			}
+		}
+	}
+}
+
 func TestUpdateAndQueryForm(t *testing.T) {
 	content := "__token__"
 	data := url.Values{}
-	data.Set("fqdn", "test3.example.com.")
+	data.Set("fqdn", "test5.example.com.")
 	data.Set("content", content)
 	updateReq, err := http.NewRequest("PUT", updateUrl, strings.NewReader(data.Encode()))
 	if err != nil {
 		t.Fatalf("Error creating request: %v", err)
 	}
 	updateReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	updateReq.Header.Set("X-Forwarded-User", "test13")
+	updateReq.Header.Set("X-Forwarded-User", "test15")
 	resp, err := client.Do(updateReq)
 	if err != nil {
 		t.Fatalf("Error sending request: %v", err)
@@ -405,7 +505,7 @@ func TestUpdateAndQueryForm(t *testing.T) {
 
 	// Test query
 	req := new(dns.Msg)
-	req.SetQuestion("_acme-challenge.test3.example.com.", dns.TypeTXT)
+	req.SetQuestion("_acme-challenge.test5.example.com.", dns.TypeTXT)
 
 	rec := dnstest.NewRecorder(&test.ResponseWriter{})
 	code, err := tt.ServeDNS(context.Background(), rec, req)
@@ -425,7 +525,7 @@ func TestUpdateAndQueryForm(t *testing.T) {
 	if len(rec.Msg.Answer) != 1 {
 		t.Errorf("Expected 1 answer, got %d", len(rec.Msg.Answer))
 	} else {
-		if want := fmt.Sprintf("_acme-challenge.test3.example.com.	0	IN	TXT	%q", content); rec.Msg.Answer[0].String() != want {
+		if want := fmt.Sprintf("_acme-challenge.test5.example.com.	0	IN	TXT	%q", content); rec.Msg.Answer[0].String() != want {
 			t.Errorf("Expected answer %q, got %q", want, rec.Msg.Answer[0].String())
 		}
 	}
@@ -436,8 +536,8 @@ func TestCleanModified(t *testing.T) {
 
 	updated := time.Now().Add(time.Duration(-5 * time.Minute))
 	tt.records = map[string]*Record{
-		"test-clean1.example.com.": {content: "some data", updated: updated},
-		"test-clean2.example.com.": {content: "other data", updated: updated},
+		"test-clean1.example.com.": {content: []string{"some data"}, updated: updated},
+		"test-clean2.example.com.": {content: []string{"other data"}, updated: updated},
 	}
 	tt.setModified()
 
@@ -447,8 +547,8 @@ func TestCleanModified(t *testing.T) {
 	cancel()
 
 	for k, v := range tt.records {
-		if v.content != "" {
-			t.Errorf("Expected empty content for %q, but got %q", k, v.content)
+		if l := len(v.content); l != 0 {
+			t.Errorf("[%s] Expected length 0, but got %d", k, l)
 		}
 	}
 
@@ -462,8 +562,10 @@ func TestCleanNotModified(t *testing.T) {
 
 	updated := time.Now().Add(time.Duration(-5 * time.Minute))
 	tt.records = map[string]*Record{
-		"test-clean1.example.com.": {content: "data", updated: updated},
-		"test-clean2.example.com.": {content: "data", updated: updated},
+		"test-clean1.example.com.": {content: []string{"data"}, updated: updated},
+		"test-clean2.example.com.": {content: []string{"data"}, updated: updated},
+		// multiple
+		"test-clean3.example.com.": {content: []string{"data", "data2"}, updated: updated},
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -472,8 +574,10 @@ func TestCleanNotModified(t *testing.T) {
 	cancel()
 
 	for k, v := range tt.records {
-		if v.content != "data" {
-			t.Errorf(`[%s] Expected "data", but got %q`, k, v.content)
+		if l := len(v.content); l != 2 {
+			t.Errorf(`[%s] expected 1 item in content but got %d: %v`, k, l, v.content)
+		} else if v.content[0] != "data" || v.content[1] != "data2" {
+			t.Errorf(`[%s] Expected {"data", "data2"}, but got %v`, k, v.content)
 		}
 	}
 }

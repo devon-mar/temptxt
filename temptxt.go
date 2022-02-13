@@ -35,7 +35,7 @@ type TempTxt struct {
 }
 
 type Record struct {
-	content string
+	content []string
 	// Store the alias for deletion
 	updated time.Time
 	allowed []*regexp.Regexp
@@ -87,19 +87,17 @@ func (tt *TempTxt) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 	}
 
 	answers := []dns.RR{}
-	txt := new(dns.TXT)
-	txt.Hdr = dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeTXT, Class: dns.ClassINET}
-
 	record.mtx.RLock()
-	content := record.content
-	record.mtx.RUnlock()
-
-	if content == "" {
+	if len(record.content) == 0 {
 		return plugin.NextOrFailure(tt.Name(), tt.Next, ctx, w, r)
 	}
-	txt.Txt = []string{content}
-
-	answers = append(answers, txt)
+	for _, c := range record.content {
+		txt := new(dns.TXT)
+		txt.Hdr = dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeTXT, Class: dns.ClassINET}
+		txt.Txt = []string{c}
+		answers = append(answers, txt)
+	}
+	record.mtx.RUnlock()
 
 	m := new(dns.Msg)
 	m.SetReply(r)
@@ -154,14 +152,14 @@ func (tt *TempTxt) updateHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Header.Get("Content-Type") {
 	case "application/json":
 		if err := json.NewDecoder(r.Body).Decode(&ub); err != nil {
-			log.Errorf("Error decoding json: %v", err)
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			log.Errorf("error decoding json: %v", err)
+			http.Error(w, "error parsing body", http.StatusBadRequest)
 			return
 		}
 	case "application/x-www-form-urlencoded":
 		if err := r.ParseForm(); err != nil {
 			log.Errorf("Error decoding form: %v", err)
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			http.Error(w, "error parsing form", http.StatusBadRequest)
 			return
 		}
 		ub.FQDN = r.PostFormValue("fqdn")
@@ -172,12 +170,12 @@ func (tt *TempTxt) updateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ub.FQDN == "" {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, "fqdn cannot be empty", http.StatusBadRequest)
 		return
 	}
 
 	if len(ub.Content) > 255 {
-		http.Error(w, "Content is too long", http.StatusBadRequest)
+		http.Error(w, "content is too long", http.StatusBadRequest)
 		return
 	}
 
@@ -198,7 +196,11 @@ func (tt *TempTxt) updateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	record.mtx.Lock()
-	record.content = ub.Content
+	if ub.Content == "" {
+		record.content = nil
+	} else {
+		record.content = append(record.content, ub.Content)
+	}
 	record.updated = time.Now()
 	record.mtx.Unlock()
 
@@ -220,8 +222,8 @@ func (tt *TempTxt) Run(ctx context.Context) error {
 				if tt.clearModified() {
 					for _, v := range tt.records {
 						v.mtx.Lock()
-						if time.Since(v.updated) > tt.maxAge && v.content != "" {
-							v.content = ""
+						if time.Since(v.updated) > tt.maxAge && len(v.content) > 0 {
+							v.content = nil
 						}
 						v.mtx.Unlock()
 					}

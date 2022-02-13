@@ -21,7 +21,7 @@ const (
 	defaultListenAddr    = ":8080"
 )
 
-var log = clog.NewWithPlugin("rdns")
+var log = clog.NewWithPlugin("temptxt")
 
 func init() {
 	plugin.Register("temptxt", setup)
