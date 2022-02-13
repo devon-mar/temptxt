@@ -38,7 +38,7 @@ func testHandler() test.HandlerFunc {
 			rcode = dns.RcodeSuccess
 		}
 		m.SetRcode(r, rcode)
-		w.WriteMsg(m)
+		_ = w.WriteMsg(m)
 		return rcode, nil
 	}
 }

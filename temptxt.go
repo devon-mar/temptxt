@@ -212,7 +212,7 @@ func (tt *TempTxt) updateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Clean old records from the zone
-func (tt *TempTxt) Run(ctx context.Context) error {
+func (tt *TempTxt) Run(ctx context.Context) {
 	go func() {
 		for {
 			select {
@@ -231,5 +231,4 @@ func (tt *TempTxt) Run(ctx context.Context) error {
 			}
 		}
 	}()
-	return nil
 }

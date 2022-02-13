@@ -148,7 +148,7 @@ func addRecord(tt *TempTxt, c *caddy.Controller, prefix string, suffix string, h
 		alias += suffix
 	}
 	if _, ok := tt.aliases[fqdn]; ok {
-		return c.Errf("Cannot have domain %q that is also in aliases")
+		return c.Errf("Cannot have domain %q that is also in aliases", fqdn)
 	}
 	tt.records[fqdn] = r
 
@@ -158,7 +158,7 @@ func addRecord(tt *TempTxt, c *caddy.Controller, prefix string, suffix string, h
 		}
 		alias = dns.Fqdn(strings.ToLower(c.Val()))
 		if _, ok := tt.records[alias]; ok {
-			return c.Errf("Cannot have alias %q that is also in domains")
+			return c.Errf("Cannot have alias %q that is also in domains", fqdn)
 		}
 	}
 	tt.aliases[alias] = r

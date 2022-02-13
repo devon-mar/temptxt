@@ -1,0 +1,12 @@
+---
+linters:
+  enable:
+    - gofumpt
+
+linters-settings:
+  errcheck:
+    exclude-functions:
+      - (*github.com/devon-mar/temptxt.TempTxt).OnFinalShutdown
+      - (github.com/miekg/dns.ResponseWriter).WriteMsg
+      - io.WriteString
+      - net/http.Serve
