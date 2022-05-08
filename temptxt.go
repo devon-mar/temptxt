@@ -89,6 +89,7 @@ func (tt *TempTxt) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 	answers := []dns.RR{}
 	record.mtx.RLock()
 	if len(record.content) == 0 {
+		record.mtx.RUnlock()
 		return plugin.NextOrFailure(tt.Name(), tt.Next, ctx, w, r)
 	}
 	for _, c := range record.content {
