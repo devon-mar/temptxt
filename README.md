@@ -91,7 +91,7 @@ Use *temptxt* for acme DNS-01 validation for `test1.example.com` and `test2.exam
 
 Update using basic auth
 ```
-curl -X POST \
+curl -X PUT \
     -d "fqdn=www.example.com&content=$CERTBOT_TOKEN" \
     -u username:password \
     https://acme-dns.example.com/update
@@ -100,7 +100,7 @@ curl -X POST \
 
 Clear the record using certificate auth
 ```
-curl -X POST \
+curl -X PUT \
     -d "fqdn=www.example.com&content=" \
     --cert ./cert.crt \
     --key ./cert.key \
