@@ -103,14 +103,14 @@ func TestServeDNS(t *testing.T) {
 		wantError  error
 	}{
 		{
-			qname: "_acme-challenge.test2.example.com.",
-			qtype: dns.TypeTXT,
+			qname:      "_acme-challenge.test2.example.com.",
+			qtype:      dns.TypeTXT,
 			wantAnswer: []string{`_acme-challenge.test2.example.com.	0	IN	TXT	"test2"`},
 		},
 		// Should be case insensitive
 		{
-			qname: "_aCME-chaLLEnge.teST2.exaMPle.com.",
-			qtype: dns.TypeTXT,
+			qname:      "_aCME-chaLLEnge.teST2.exaMPle.com.",
+			qtype:      dns.TypeTXT,
 			wantAnswer: []string{`_aCME-chaLLEnge.teST2.exaMPle.com.	0	IN	TXT	"test2"`},
 		},
 		// Should fallthrough because our config has a prefix
@@ -121,8 +121,8 @@ func TestServeDNS(t *testing.T) {
 		},
 		// Should fallthrough because content is empty
 		{
-			qname: "_acme-challenge.empty.example.com.",
-			qtype: dns.TypeTXT,
+			qname:      "_acme-challenge.empty.example.com.",
+			qtype:      dns.TypeTXT,
 			wantAnswer: []string{`_acme-challenge.empty.example.com.	300	IN	TXT	"fallthrough"`},
 		},
 	}
