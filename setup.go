@@ -150,7 +150,7 @@ func addRecord(tt *TempTxt, c *caddy.Controller, prefix string, suffix string, h
 	}
 	r := &Record{}
 
-	alias := (dns.Fqdn(strings.ToLower(c.Val())))
+	alias := dns.Fqdn(strings.ToLower(c.Val()))
 	fqdn := prefix + alias + suffix
 	if !hasAlias {
 		alias += suffix

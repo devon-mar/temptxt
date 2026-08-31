@@ -66,11 +66,12 @@ func TestMain(m *testing.M) {
 
 	tt.records = make(map[string]*Record)
 	for k, v := range tt.aliases {
-		if k == "test4-alias.example.com." {
+		switch k {
+		case "test4-alias.example.com.":
 			tt.records["_acme-challenge.test4.example.com."] = v
-		} else if k == "test6-alias.example.com." {
+		case "test6-alias.example.com.":
 			tt.records["_acme-challenge.test6.example.com."] = v
-		} else {
+		default:
 			tt.records["_acme-challenge."+k] = v
 		}
 	}

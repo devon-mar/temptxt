@@ -138,7 +138,7 @@ func TestMinimal(t *testing.T) {
 		t.Errorf("Expected %q, but got %q", defaultMaxAge, c.maxAge)
 	}
 	if c.cleanInterval != defaultCleanInterval {
-		t.Errorf("Expected %q, but got %q", defaultCleanInterval, c.cleanInterval)
+		t.Errorf("Expected %d, but got %d", defaultCleanInterval, c.cleanInterval)
 	}
 	if c.listenAddr != defaultListenAddr {
 		t.Errorf("Expected %q, but got %q", defaultListenAddr, c.listenAddr)

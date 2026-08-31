@@ -10,27 +10,27 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v7
         with:
-          go-version: "^1.17.5"
+          go-version-file: go.mod
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v9
 
       - run: go test
 
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: temptxt
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v7
         with:
-          go-version: "^1.17.5"
+          go-version-file: go.mod
 
       - name: Clone coredns/coredns
         # From https://stackoverflow.com/questions/17414104/git-checkout-latest-tag
