@@ -570,8 +570,12 @@ func TestCleanNotModified(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 	cancel()
 
-	wantLen := 1
+	expectedLen := map[string]int{
+		"test-clean1.example.com.": 1,
+		"test-clean2.example.com.": 2,
+	}
 	for k, v := range tt.records {
+		wantLen := expectedLen[k]
 		if l := len(v.content); l != wantLen {
 			t.Errorf(`[%s] wanted %d item(s) in content but got %d: %v`, k, wantLen, l, v.content)
 		}
