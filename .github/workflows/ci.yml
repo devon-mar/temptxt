@@ -28,10 +28,6 @@ jobs:
         with:
           path: temptxt
 
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: temptxt/go.mod
-
       - name: Clone coredns/coredns
         # From https://stackoverflow.com/questions/17414104/git-checkout-latest-tag
         run: |
@@ -41,6 +37,10 @@ jobs:
           latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo "Checking out $latestTag"
           git checkout $latestTag
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: coredns/.go-version
 
       - name: Edit plugin.cfg
         working-directory: coredns
