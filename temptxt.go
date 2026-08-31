@@ -3,6 +3,7 @@ package temptxt
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/alecholmes/xfccparser"
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/pkg/reuseport"
 	"github.com/coredns/coredns/request"
@@ -25,6 +27,7 @@ type TempTxt struct {
 	// The Record should also be in records.
 	aliases    map[string]*Record
 	authHeader string
+	xfcc       bool
 
 	cleanInterval time.Duration
 	maxAge        time.Duration
@@ -137,13 +140,38 @@ func (tt *TempTxt) OnFinalShutdown() error {
 	return nil
 }
 
+func (tt *TempTxt) getUser(r *http.Request) (string, error) {
+	headerVal := r.Header.Get(tt.authHeader)
+
+	if tt.xfcc {
+		certs, err := xfccparser.ParseXFCCHeader(headerVal)
+		if err != nil {
+			return "", err
+		}
+		if len(certs) != 1 {
+			return "", fmt.Errorf("received %d certs", len(certs))
+		}
+		if len(certs[0].DNS) != 1 {
+			return "", fmt.Errorf("received %d DNS", len(certs[0].DNS))
+		}
+		return certs[0].DNS[0], nil
+	}
+
+	return headerVal, nil
+}
+
 func (tt *TempTxt) updateHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
 
-	user := r.Header.Get(tt.authHeader)
+	user, err := tt.getUser(r)
+	if err != nil {
+		log.Errorf("failed to get user: %v", err)
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
 	if user == "" {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return

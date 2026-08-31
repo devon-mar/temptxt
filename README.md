@@ -17,7 +17,7 @@ temptxt [PREFIX] [SUFFIX] {
     [txt FQDN REGEXP1 REGEXP2 ...]
     [txt_alias ACTUAL_FQDN UPDATE_FQDN REGEXP1 REGEXP2 ...]
 
-    [auth_header X-Forwarded-User]
+    [auth_header X-Forwarded-User [xfcc]]
     [clean_interval DURATION]
     [max_age DURATION]
     [listen ADDRESS]

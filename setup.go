@@ -2,6 +2,7 @@ package temptxt
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"regexp"
 	"strings"
@@ -89,6 +90,13 @@ func parseConfig(c *caddy.Controller) (*TempTxt, error) {
 				return nil, c.ArgErr()
 			}
 			tt.authHeader = c.Val()
+			if c.NextArg() {
+				v := c.Val()
+				if v != "xfcc" {
+					return nil, c.SyntaxErr(fmt.Sprintf("unexpected argument %q", v))
+				}
+				tt.xfcc = true
+			}
 		case "txt_alias":
 			err := addRecord(tt, c, prefix, suffix, true)
 			if err != nil {

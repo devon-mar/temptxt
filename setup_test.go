@@ -99,6 +99,14 @@ func TestConfigErrors(t *testing.T) {
 		`temptxt {
 	clean_interval 30s
 }`,
+		// 19. rubbish after xfcc
+		`temptxt {
+	auth_header test xfcc abc
+}`,
+		// 20. value after auth header value not xfcc
+		`temptxt {
+	auth_header test abc
+}`,
 	}
 
 	for i, test := range tests {
@@ -330,6 +338,20 @@ func TestAuthHeader(t *testing.T) {
 	c := getConfig(body, t)
 	if want := "X-Test"; c.authHeader != want {
 		t.Errorf("Got %s, expected %s", c.authHeader, want)
+	}
+}
+
+func TestAuthHeaderXfcc(t *testing.T) {
+	body := `temptxt {
+	auth_header X-Test xfcc
+}`
+	c := getConfig(body, t)
+	if want := "X-Test"; c.authHeader != want {
+		t.Errorf("Got %s, expected %s", c.authHeader, want)
+	}
+
+	if c.xfcc != true {
+		t.Error("expected xfcc to be true")
 	}
 }
 

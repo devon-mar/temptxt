@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"regexp"
@@ -574,5 +575,64 @@ func TestCleanNotModified(t *testing.T) {
 			t.Errorf(`[%s] wanted %d item(s) in content but got %d: %v`, k, wantLen, l, v.content)
 		}
 		wantLen++
+	}
+}
+
+func TestXFCCUpdate(t *testing.T) {
+	const h0 = "Hash=0000000000000000000000000000000000000000000000000000000000000000"
+	const h1 = "Hash=1111111111111111111111111111111111111111111111111111111111111111"
+	tests := map[string]struct {
+		value  string
+		status int
+	}{
+		"ok": {
+			value:  h0 + ";DNS=user1",
+			status: http.StatusNoContent,
+		},
+		"multiple DNS": {
+			value:  h0 + ";DNS=user1;DNS=user2",
+			status: http.StatusUnauthorized,
+		},
+		"multiple certs": {
+			value:  h0 + ";DNS=user1," + h1 + ";DNS=user1",
+			status: http.StatusUnauthorized,
+		},
+		"no DNS": {
+			value:  h0 + `;URI=test`,
+			status: http.StatusUnauthorized,
+		},
+		"parse error": {
+			value:  `;;`,
+			status: http.StatusUnauthorized,
+		},
+		"no header": {status: http.StatusUnauthorized},
+	}
+
+	tt := TempTxt{
+		xfcc:       true,
+		authHeader: "X-Forwarded-Client-Cert",
+		aliases: map[string]*Record{
+			"example.com.": {
+				allowed: []*regexp.Regexp{regexp.MustCompile("user1")},
+			},
+		},
+	}
+
+	content := strings.Repeat("a", 255)
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			updateReq := httptest.NewRequest("PUT", updateUrl, bytes.NewBuffer([]byte(`{"fqdn":"example.com.", "content": "`+content+`"}`)))
+			updateReq.Header.Set("Content-Type", "application/json")
+			if tc.value != "" {
+				updateReq.Header.Set("X-Forwarded-Client-Cert", tc.value)
+			}
+
+			w := httptest.NewRecorder()
+			tt.updateHandler(w, updateReq)
+
+			resp := w.Result()
+			assertStatus(tc.status, resp, t)
+		})
 	}
 }
