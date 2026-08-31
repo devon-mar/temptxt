@@ -30,7 +30,7 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version-file: go.mod
+          go-version-file: temptxt/go.mod
 
       - name: Clone coredns/coredns
         # From https://stackoverflow.com/questions/17414104/git-checkout-latest-tag
