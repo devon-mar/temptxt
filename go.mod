@@ -1,6 +1,6 @@
 module github.com/devon-mar/temptxt
 
-go 1.27
+go 1.26
 
 require (
 	github.com/alecholmes/xfccparser v0.4.0
