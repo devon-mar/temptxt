@@ -49,6 +49,8 @@ jobs:
 
       - name: Move temptxt to $GOROOT/src/
         run: |
+          GOROOT=$(go env GOROOT)
+          echo "$GOROOT"
           mkdir -p "$GOROOT/src"
           mv ./temptxt "$GOROOT/src/temptxt"
 
