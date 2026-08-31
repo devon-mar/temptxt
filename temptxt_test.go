@@ -579,7 +579,6 @@ func TestCleanNotModified(t *testing.T) {
 		if l := len(v.content); l != wantLen {
 			t.Errorf(`[%s] wanted %d item(s) in content but got %d: %v`, k, wantLen, l, v.content)
 		}
-		wantLen++
 	}
 }
 
